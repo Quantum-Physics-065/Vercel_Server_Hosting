@@ -63,6 +63,14 @@ router.get('/dashboard/certificates', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'certificates.html'));
 });
 
+router.get('/dashboard/setting', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'server-setting.html'));
+});
+
+router.get('/dashboard/vpn', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'vpn.html'));
+});
+
 router.get('/status', (req, res) => {
   res.redirect('/dashboard');
 });

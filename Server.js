@@ -13,6 +13,7 @@ dotenv.config();
 const fileRoutes = require('./routes/fileRoutes');
 const statusRoutes = require('./routes/statusRoutes');
 const configRoutes = require('./routes/configRoutes');
+const authRoutes = require('./routes/authRoutes');
 const storageService = require('./services/storageService');
 const configService = require('./services/configService');
 
@@ -45,25 +46,6 @@ function buildCorsOptions() {
   };
 }
 
-function createHttpsServer() {
-  if (!sslKeyPath || !sslCertPath) {
-    throw new Error('SSL_KEY_PATH and SSL_CERT_PATH must be set when HTTPS is enabled');
-  }
-
-  const httpsOptions = {
-    key: fs.readFileSync(path.resolve(sslKeyPath)),
-    cert: fs.readFileSync(path.resolve(sslCertPath)),
-  };
-
-  if (sslCaPath) {
-    httpsOptions.ca = fs.readFileSync(path.resolve(sslCaPath));
-    httpsOptions.requestCert = requestClientCert;
-    httpsOptions.rejectUnauthorized = requestClientCert;
-  }
-
-  return https.createServer(httpsOptions, app);
-}
-
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(cors(buildCorsOptions()));
@@ -74,6 +56,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(fileRoutes);
 app.use(configRoutes.router);
+app.use(authRoutes);
 app.use(statusRoutes);
 
 app.use((req, res) => {

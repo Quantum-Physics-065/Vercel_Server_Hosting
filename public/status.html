@@ -412,7 +412,7 @@
         <a href="/dashboard/files">Files</a>
         <a href="/dashboard/connection">Connection</a>
         <a href="/dashboard/vpn">VPN Config</a>
-        <a href="/dashboard/Setting">Server Setting</a>
+        <a href="/dashboard/setting">Server Setting</a>
         <a href="/dashboard/certificates">Server certificates</a>
       </div>
     </aside>
@@ -423,72 +423,20 @@
             <h2>Overview</h2>
             <p>Server status, storage health, active protocols, and certificate information.</p>
           </div>
-          <div style="display:flex; gap:12px; align-items:center;">
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <button id="copyDashboardButton" style="padding:12px 20px; min-height:44px;">Copy link</button>
             <button id="refreshButton" style="padding:12px 20px; min-height:44px;">Refresh</button>
-            <div id="overviewBadge" class="status-pill">Loading…</div>
+            <div id="overviewBadge" class="status-pill">Initializing</div>
           </div>
         </header>
         <div class="stats-grid">
-          <div class="metric"><span>Server</span><strong
-              id="overviewServer">https://a4cd-171-61-167-48.ngrok-free.app/</strong></div>
-          <div class="metric"><span>Port</span><strong id="overviewPort">3000</strong></div>
-          <div class="metric"><span>Storage folder</span><strong
-              id="overviewPath">/storageDir/files?name="data"</strong></div>
-          <div class="metric"><span>Server URL</span><strong
-              id="overviewUrl">https://a4cd-171-61-167-48.ngrok-free.app/status</strong></div>
-          <div class="metric"><span>Files count</span><strong id="overviewCount">Loading…</strong></div>
-          <div class="metric"><span>Storage size</span><strong id="overviewSize">10 TB</strong></div>
-          <div class="metric"><span>Protocols</span><strong id="overviewProtocols">HTTPS, FTP, TCP, UNZIP</strong></div>
-        </div>
-      </section>
-      <section class="panel" id="files" style="display:none;">
-        <header>
-          <div>
-            <h2>Files</h2>
-            <p>Browse storage and edit file content directly in the portal.</p>
-          </div>
-          <div class="status-pill" id="fileBadge">Ready</div>
-        </header>
-        <div style="overflow-x:auto;">
-          <table class="file-table">
-            <thead>
-              <tr>
-                <th>Filename</th>
-                <th>Size</th>
-                <th>Modified</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="fileTableBody">
-              <tr>
-                <td colspan="4">Loading files…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="file-editor">
-          <label style="color:#cbd5e1;">Selected file</label>
-          <textarea id="fileEditor" placeholder="Select a file from the list to load its content" disabled></textarea>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;"><button id="saveFileButton"
-              disabled>Save file</button><span id="fileInfoText" style="color:#94a3b8; font-size:0.92rem;">No file
-              selected yet.</span></div>
-        </div>
-      </section>
-      <section class="panel" id="connection" style="display:none;">
-        <header>
-          <div>
-            <h2>Connection & certificates</h2>
-            <p>Detailed connection settings and certificate sources for secure transport.</p>
-          </div>
-          <div id="connBadge" class="status-pill">Loading</div>
-        </header>
-        <div class="stats-grid">
-          <div class="metric"><span>Protocol</span><strong id="connProtocol">Loading…</strong></div>
-          <div class="metric"><span>Host</span><strong id="connHost">Loading…</strong></div>
-          <div class="metric"><span>Port</span><strong id="connPort">Loading…</strong></div>
-          <div class="metric"><span>HTTPS</span><strong id="connSsl">Loading…</strong></div>
-          <div class="metric"><span>Root CA</span><strong id="connRoot">Loading…</strong></div>
-          <div class="metric"><span>Client cert verify</span><strong id="connClientCert">Loading…</strong></div>
+          <div class="metric"><span>Server</span><strong id="overviewServer">Fetching...</strong></div>
+          <div class="metric"><span>Port</span><strong id="overviewPort">Fetching...</strong></div>
+          <div class="metric"><span>Storage folder</span><strong id="overviewPath">Fetching...</strong></div>
+          <div class="metric"><span>Server URL</span><strong id="overviewUrl">Fetching...</strong></div>
+          <div class="metric"><span>Files count</span><strong id="overviewCount">Fetching...</strong></div>
+          <div class="metric"><span>Storage size</span><strong id="overviewSize">Fetching...</strong></div>
+          <div class="metric"><span>Protocols</span><strong id="overviewProtocols">Fetching...</strong></div>
         </div>
       </section>
     </main>
@@ -501,193 +449,61 @@
 </body>
 <!-- Script Data -->
 <script>
-  let panels;
-  let buttons;
-  let fileEditor;
-  let saveButton;
-  let refreshButton;
-  let fileBadge;
-  let overviewBadge;
-  let connBadge;
-  let selectedFile = null;
-
-  function initializePage() {
-    panels = {
-      overview: document.getElementById('overview'),
-      files: document.getElementById('files'),
-      connection: document.getElementById('connection'),
-    };
-    buttons = document.querySelectorAll('.nav button');
-    fileEditor = document.getElementById('fileEditor');
-    saveButton = document.getElementById('saveFileButton');
-    refreshButton = document.getElementById('refreshButton');
-    fileBadge = document.getElementById('fileBadge');
-    overviewBadge = document.getElementById('overviewBadge');
-    connBadge = document.getElementById('connBadge');
-
-    buttons.forEach((button) => {
-      button.addEventListener('click', () => {
-        buttons.forEach((btn) => btn.classList.remove('active'));
-        button.classList.add('active');
-        Object.entries(panels).forEach(([key, panel]) => {
-          panel.style.display = key === button.dataset.section ? 'block' : 'none';
-        });
-      });
-    });
-  }
-
-  function formatBytes(bytes) {
-    if (!bytes || bytes === 0) return '0 B';
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-  }
-
-  function toLocalString(value) {
-    return new Date(value).toLocaleString();
-  }
-
-  async function loadStatus() {
+    const refreshButton = document.getElementById('refreshButton');
+    const copyDashboardButton = document.getElementById('copyDashboardButton');
     const overviewBadge = document.getElementById('overviewBadge');
-    const connBadge = document.getElementById('connBadge');
-    try {
-      const response = await fetch('/api/status');
-      if (!response.ok) throw new Error(`Status failed ${response.status}`);
-      const status = await response.json();
 
-      document.getElementById('overviewServer').textContent = status.protocol.toUpperCase();
-      document.getElementById('overviewUrl').textContent = window.location.origin;
-      document.getElementById('overviewPort').textContent = status.port;
-      document.getElementById('overviewPath').textContent = status.storageDir;
-      document.getElementById('overviewCount').textContent = status.fileCount;
-      document.getElementById('overviewSize').textContent = formatBytes(status.totalSize);
-      document.getElementById('overviewProtocols').textContent = Object.entries(status.protocols)
-        .filter(([_, enabled]) => enabled)
-        .map(([protocol]) => protocol.toUpperCase())
-        .join(', ');
-
-      document.getElementById('connProtocol').textContent = status.protocol.toUpperCase();
-      document.getElementById('connHost').textContent = status.host;
-      document.getElementById('connPort').textContent = status.port;
-      document.getElementById('connSsl').textContent = status.sslEnabled ? 'Enabled' : 'Disabled';
-      document.getElementById('connRoot').textContent = status.sslCaPath || 'Not configured';
-      document.getElementById('connClientCert').textContent = status.requestClientCert ? 'Required' : 'Optional / disabled';
-
-      overviewBadge.textContent = 'Online';
-      overviewBadge.classList.remove('offline');
-      connBadge.textContent = status.sslEnabled ? 'Secure' : 'Standard';
-      connBadge.classList.remove('offline');
-    } catch (err) {
-      overviewBadge.textContent = 'Offline';
-      overviewBadge.classList.add('offline');
-      connBadge.textContent = 'Offline';
-      connBadge.classList.add('offline');
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
     }
-  }
 
-  async function loadFiles() {
-    const body = document.getElementById('fileTableBody');
-    const fileBadge = document.getElementById('fileBadge');
-    try {
-      const response = await fetch('/files');
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Files failed ${response.status}`);
+    function toLocalString(value) {
+      return new Date(value).toLocaleString();
+    }
+
+    async function loadStatus() {
+      overviewBadge.textContent = 'Refreshing';
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) throw new Error(`Status failed ${response.status}`);
+        const status = await response.json();
+
+        document.getElementById('overviewServer').textContent = status.protocol.toUpperCase();
+        document.getElementById('overviewUrl').textContent = `${status.protocol}://${status.host}:${status.port}`;
+        document.getElementById('overviewPort').textContent = status.port;
+        document.getElementById('overviewPath').textContent = status.storageDir;
+        document.getElementById('overviewCount').textContent = status.fileCount;
+        document.getElementById('overviewSize').textContent = formatBytes(status.totalSize);
+        document.getElementById('overviewProtocols').textContent = Object.entries(status.protocols)
+          .filter(([_, enabled]) => enabled)
+          .map(([protocol]) => protocol.toUpperCase())
+          .join(', ') || 'None';
+
+        overviewBadge.textContent = 'Online';
+        overviewBadge.classList.remove('offline');
+      } catch (err) {
+        overviewBadge.textContent = 'Offline';
+        overviewBadge.classList.add('offline');
       }
+    }
 
-      const data = await response.json();
-      const files = Array.isArray(data.files) ? data.files : [];
+    refreshButton.addEventListener('click', loadStatus);
 
-      if (!files.length) {
-        body.innerHTML = '<tr><td colspan="4">No files found</td></tr>';
-        fileBadge.textContent = 'No files';
-        fileBadge.classList.remove('offline');
-        return;
+    copyDashboardButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        overviewBadge.textContent = 'Link copied';
+      } catch (err) {
+        overviewBadge.textContent = 'Copy failed';
       }
+    });
 
-      body.innerHTML = files.map((file) => `
-          <tr data-filename="${encodeURIComponent(file.filename)}">
-            <td>${file.filename}</td>
-            <td>${formatBytes(file.size)}</td>
-            <td>${toLocalString(file.modified)}</td>
-            <td><a class="file-link" href="/file?name=${encodeURIComponent(file.filename)}" target="_blank" rel="noopener">Download</a></td>
-          </tr>
-        `).join('');
-
-      document.querySelectorAll('#fileTableBody tr').forEach((row) => {
-        row.addEventListener('click', () => selectFile(decodeURIComponent(row.dataset.filename)));
-      });
-
-      fileBadge.textContent = 'Ready';
-      fileBadge.classList.remove('offline');
-    } catch (err) {
-      body.innerHTML = `<tr><td colspan="4">Unable to load files: ${err.message}</td></tr>`;
-      fileBadge.textContent = 'Offline';
-      fileBadge.classList.add('offline');
-    }
-  }
-
-  async function selectFile(filename) {
-    selectedFile = filename;
-    saveButton.disabled = true;
-    fileEditor.disabled = true;
-    fileEditor.value = 'Loading file content...';
-    document.getElementById('fileInfoText').textContent = `Loading ${filename}...`;
-
-    try {
-      const response = await fetch(`${baseUrl}/file/content?name=${encodeURIComponent(filename)}`);
-      if (!response.ok) throw new Error(`Unable to open file: ${response.status}`);
-      const data = await response.json();
-      fileEditor.value = data.content;
-      fileEditor.disabled = false;
-      saveButton.disabled = false;
-      document.getElementById('fileInfoText').textContent = `Editing ${data.filename} • ${formatBytes(data.size)}`;
-    } catch (err) {
-      fileEditor.value = `Error loading file: ${err.message}`;
-      document.getElementById('fileInfoText').textContent = 'Unable to open file';
-    }
-  }
-
-  saveButton.addEventListener('click', async () => {
-    if (!selectedFile) return;
-    saveButton.disabled = true;
-    saveButton.textContent = 'Saving...';
-
-    try {
-      const response = await fetch(`${baseUrl}/file/save?name=${encodeURIComponent(selectedFile)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: fileEditor.value }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Save failed: ${response.status}`);
-      }
-      const result = await response.json();
-      document.getElementById('fileInfoText').textContent = `Saved ${result.filename} • ${formatBytes(result.size)}`;
-      fileBadge.textContent = 'Saved';
-    } catch (err) {
-      document.getElementById('fileInfoText').textContent = `Save error: ${err.message}`;
-      fileBadge.textContent = 'Save failed';
-      fileBadge.classList.add('offline');
-    } finally {
-      saveButton.disabled = false;
-      saveButton.textContent = 'Save file';
-    }
-  });
-
-  function refresh() {
-    loadStatus();
-    loadFiles();
-  }
-
-  refreshButton.addEventListener('click', refresh);
-
-  window.addEventListener('DOMContentLoaded', () => {
-    initializePage();
-    refresh();
-    setInterval(refresh, 12000);
-  });
-</script>
-
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStatus();
+      setInterval(loadStatus, 12000);
+    });
+  </script>
 </html>

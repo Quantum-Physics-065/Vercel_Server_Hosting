@@ -217,7 +217,7 @@
         <h1>Files Manager</h1>
         <p>Browse storage, edit file content, and download files from your server. Click a row to load the file content in the editor below.</p>
       </div>
-      <div class="status-pill" id="fileBadge">Loading…</div>
+      <div class="status-pill" id="fileBadge">Fetching...</div>
     </div>
 
     <nav class="nav">
@@ -233,7 +233,7 @@
             <tr><th>Filename</th><th>Size</th><th>Modified</th><th>Action</th></tr>
           </thead>
           <tbody id="fileTableBody">
-            <tr><td colspan="4">Loading files…</td></tr>
+            <tr><td colspan="4">Fetching files...</td></tr>
           </tbody>
         </table>
       </div>
@@ -315,7 +315,7 @@
     }
 
     async function loadFiles() {
-      fileBadge.textContent = 'Loading…';
+      fileBadge.textContent = 'Fetching...';
       try {
         const response = await fetch('/files');
         if (!response.ok) {
@@ -379,8 +379,8 @@
       selectedFile = filename;
       fileEditor.disabled = true;
       saveButton.disabled = true;
-      fileEditor.value = 'Loading file content...';
-      fileInfoText.textContent = `Loading ${filename}...`;
+      fileEditor.value = 'Fetching file content...';
+      fileInfoText.textContent = `Fetching ${filename}...`;
 
       try {
         const response = await fetch(`/file/content?name=${encodeURIComponent(filename)}`);

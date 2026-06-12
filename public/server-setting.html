@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Settings</title>
+  <style>
+    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #050816; color: #eef2ff; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    header, footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    header h1 { margin: 0; font-size: clamp(2rem, 4vw, 2.6rem); }
+    nav a { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 999px; text-decoration: none; color: #eef2ff; background: rgba(15,23,42,0.75); border: 1px solid rgba(255,255,255,0.08); transition: transform 160ms ease, background 160ms ease; }
+    nav a:hover, nav a.active { background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); transform: translateY(-1px); }
+    .panel { background: rgba(15,23,42,0.82); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 26px; box-shadow: 0 30px 90px rgba(0,0,0,0.28); }
+    .grid { display: grid; gap: 18px; }
+    .field { display: grid; gap: 10px; }
+    .field label { font-weight: 600; color: rgba(226,232,240,0.8); }
+    .field input, .field select { width: 100%; border-radius: 16px; border: 1px solid rgba(148,163,184,0.18); background: rgba(15,23,42,0.9); color: #eef2ff; padding: 14px 16px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
+    button { border: none; border-radius: 16px; padding: 14px 22px; cursor: pointer; background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); color: #fff; font-weight: 700; }
+    .notice { color: rgba(226,232,240,0.75); }
+    @media (max-width: 860px) { .page { padding: 18px; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Server Settings</h1>
+        <p class="notice">Update host, ports, protocol, and certificate paths for the running server.</p>
+      </div>
+      <nav>
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/files">Files</a>
+        <a href="/dashboard/connection">Connection</a>
+        <a href="/dashboard/vpn">VPN Config</a>
+        <a href="/dashboard/setting" class="active">Server Setting</a>
+        <a href="/dashboard/certificates">Certificates</a>
+        <a href="/dashboard/login">Login</a>
+      </nav>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="field"><label for="protocol">Protocol</label><select id="protocol"><option value="http">HTTP</option><option value="https">HTTPS</option><option value="ftp">FTP</option></select></div>
+        <div class="field"><label for="host">Server Host</label><input id="host" type="text" placeholder="0.0.0.0" /></div>
+        <div class="field"><label for="port">Server Port</label><input id="port" type="number" placeholder="3000" /></div>
+        <div class="field"><label for="ftpPort">FTP Port</label><input id="ftpPort" type="number" placeholder="2121" /></div>
+        <div class="field"><label for="sslCert">SSL certificate path</label><input id="sslCert" type="text" placeholder="/path/to/cert.pem" /></div>
+        <div class="field"><label for="sslKey">SSL key path</label><input id="sslKey" type="text" placeholder="/path/to/key.pem" /></div>
+        <div class="field"><label for="sslCa">SSL CA path</label><input id="sslCa" type="text" placeholder="/path/to/ca.pem" /></div>
+        <div class="field"><label for="clientCert">Request client cert</label><select id="clientCert"><option value="false">Disabled</option><option value="true">Required</option></select></div>
+      </div>
+      <div class="actions">
+        <button id="saveConfig">Save Settings</button>
+        <span id="statusText" class="notice">Configuration is loaded from the API.</span>
+      </div>
+    </section>
+
+    <footer>
+      <span>Server Setting page</span>
+      <span>All updates return JSON status on save requests.</span>
+    </footer>
+  </div>
+
+  <script>
+    const protocol = document.getElementById('protocol');
+    const host = document.getElementById('host');
+    const port = document.getElementById('port');
+    const ftpPort = document.getElementById('ftpPort');
+    const sslCert = document.getElementById('sslCert');
+    const sslKey = document.getElementById('sslKey');
+    const sslCa = document.getElementById('sslCa');
+    const clientCert = document.getElementById('clientCert');
+    const saveConfig = document.getElementById('saveConfig');
+    const statusText = document.getElementById('statusText');
+
+    async function loadConfig() {
+      statusText.textContent = 'Fetching latest configuration...';
+      try {
+        const response = await fetch('/api/config');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load config');
+        protocol.value = data.protocol;
+        host.value = data.host;
+        port.value = data.port;
+        ftpPort.value = data.ftpPort;
+        sslCert.value = data.sslCertPath || '';
+        sslKey.value = data.sslKeyPath || '';
+        sslCa.value = data.sslCaPath || '';
+        clientCert.value = String(data.requestClientCert);
+        statusText.textContent = 'Configuration loaded successfully.';
+      } catch (err) {
+        statusText.textContent = `Error loading config: ${err.message}`;
+      }
+    }
+
+    saveConfig.addEventListener('click', async () => {
+      saveConfig.disabled = true;
+      saveConfig.textContent = 'Saving...';
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            protocol: protocol.value,
+            host: host.value,
+            port: Number(port.value),
+            ftpPort: Number(ftpPort.value),
+            sslCertPath: sslCert.value,
+            sslKeyPath: sslKey.value,
+            sslCaPath: sslCa.value,
+            requestClientCert: clientCert.value === 'true',
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Save failed');
+        statusText.textContent = 'Settings saved and will be reflected in the server status.';
+      } catch (err) {
+        statusText.textContent = `Save error: ${err.message}`;
+      } finally {
+        saveConfig.disabled = false;
+        saveConfig.textContent = 'Save Settings';
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', loadConfig);
+  </script>
+</body>
+</html>

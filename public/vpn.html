@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VPN Configuration</title>
+  <style>
+    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #050816; color: #eef2ff; }
+    .page { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header, footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    header h1 { margin: 0; font-size: clamp(2rem, 4vw, 2.5rem); }
+    nav a { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 999px; color: #eef2ff; text-decoration: none; background: rgba(15,23,42,0.75); border: 1px solid rgba(255,255,255,0.08); transition: transform 160ms ease, background 160ms ease; }
+    nav a:hover, nav a.active { background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); transform: translateY(-1px); }
+    .panel { background: rgba(15,23,42,0.82); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 26px; box-shadow: 0 30px 90px rgba(0,0,0,0.28); }
+    .row { display: grid; gap: 8px; margin-bottom: 18px; }
+    .row span { color: rgba(226,232,240,0.75); }
+    .row strong { color: #fff; font-size: 1rem; }
+    button { border: none; border-radius: 16px; padding: 14px 22px; cursor: pointer; background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); color: #fff; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .notice { color: rgba(226,232,240,0.75); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>VPN Configuration</h1>
+        <p class="notice">View the active VPN configuration stored in the runtime server config.</p>
+      </div>
+      <nav>
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/files">Files</a>
+        <a href="/dashboard/connection">Connection</a>
+        <a href="/dashboard/vpn" class="active">VPN Config</a>
+        <a href="/dashboard/setting">Server Setting</a>
+        <a href="/dashboard/certificates">Certificates</a>
+        <a href="/dashboard/login">Login</a>
+      </nav>
+    </header>
+
+    <section class="panel" id="vpnPanel">
+      <div class="row"><span>VPN Server</span><strong id="vpnServer">Fetching...</strong></div>
+      <div class="row"><span>VPN Port</span><strong id="vpnPort">Fetching...</strong></div>
+      <div class="row"><span>VPN Protocol</span><strong id="vpnProtocol">Fetching...</strong></div>
+      <div class="row"><span>VPN Username</span><strong id="vpnUsername">Fetching...</strong></div>
+      <div class="row"><span>VPN Password</span><strong id="vpnPassword">Fetching...</strong></div>
+      <div class="actions"><button id="refreshVpn">Refresh VPN status</button></div>
+    </section>
+
+    <footer>
+      <span>VPN information is retrieved from the server config service.</span>
+      <span>All values are returned as JSON from /api/config.</span>
+    </footer>
+  </div>
+
+  <script>
+    const vpnServer = document.getElementById('vpnServer');
+    const vpnPort = document.getElementById('vpnPort');
+    const vpnProtocol = document.getElementById('vpnProtocol');
+    const vpnUsername = document.getElementById('vpnUsername');
+    const vpnPassword = document.getElementById('vpnPassword');
+    const refreshVpn = document.getElementById('refreshVpn');
+
+    async function loadVpnConfig() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        if (!response.ok) throw new Error(config.error || 'Config load failed');
+        vpnServer.textContent = config.vpnServer || 'Not configured';
+        vpnPort.textContent = config.vpnPort || 'Not configured';
+        vpnProtocol.textContent = config.vpnProtocol || 'Not configured';
+        vpnUsername.textContent = config.vpnUsername || 'Not configured';
+        vpnPassword.textContent = config.vpnPassword ? 'Configured' : 'Empty';
+      } catch (err) {
+        vpnServer.textContent = `Error: ${err.message}`;
+        vpnPort.textContent = `Error`; 
+        vpnProtocol.textContent = `Error`;
+        vpnUsername.textContent = `Error`;
+        vpnPassword.textContent = `Error`;
+      }
+    }
+
+    refreshVpn.addEventListener('click', loadVpnConfig);
+    window.addEventListener('DOMContentLoaded', loadVpnConfig);
+  </script>
+</body>
+</html>
