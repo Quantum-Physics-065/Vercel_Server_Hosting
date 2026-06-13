@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Settings</title>
+  <style>
+    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #050816; color: #eef2ff; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    header, footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    header h1 { margin: 0; font-size: clamp(2rem, 4vw, 2.6rem); }
+    nav a { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 999px; text-decoration: none; color: #eef2ff; background: rgba(15,23,42,0.75); border: 1px solid rgba(255,255,255,0.08); transition: transform 160ms ease, background 160ms ease; }
+    nav a:hover, nav a.active { background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); transform: translateY(-1px); }
+    .panel { background: rgba(15,23,42,0.82); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 26px; box-shadow: 0 30px 90px rgba(0,0,0,0.28); }
+    .grid { display: grid; gap: 18px; }
+    .field { display: grid; gap: 10px; }
+    .field label { font-weight: 600; color: rgba(226,232,240,0.8); }
+    .field input { width: 100%; border-radius: 16px; border: 1px solid rgba(148,163,184,0.18); background: rgba(15,23,42,0.9); color: #eef2ff; padding: 14px 16px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
+    button { border: none; border-radius: 16px; padding: 14px 22px; cursor: pointer; background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95)); color: #fff; font-weight: 700; }
+    .notice { color: rgba(226,232,240,0.75); }
+    @media (max-width: 860px) { .page { padding: 18px; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Developer Settings</h1>
+        <p class="notice">This page is an alias of the Server Settings page for developer workflows.</p>
+      </div>
+      <nav>
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/files">Files</a>
+        <a href="/dashboard/connection">Connection</a>
+        <a href="/dashboard/vpn">VPN Config</a>
+        <a href="/dashboard/setting" class="active">Server Setting</a>
+        <a href="/dashboard/certificates">Certificates</a>
+        <a href="/dashboard/DeverloperSetting">Developer Setting</a>
+      </nav>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="notice" id="devNotice">
+          Developer settings are managed via the existing <code>/api/config</code> endpoint.
+        </div>
+        <div class="field"><label>Current host</label><input id="devHost" type="text" readonly /></div>
+        <div class="field"><label>Current port</label><input id="devPort" type="text" readonly /></div>
+        <div class="field"><label>Current protocol</label><input id="devProtocol" type="text" readonly /></div>
+        <div class="field"><label>Config URL (relative)</label><input id="devApiUrl" type="text" readonly /></div>
+      </div>
+
+      <div class="actions">
+        <button id="refreshDevButton" type="button">Refresh</button>
+        <span id="devStatus" class="notice">Ready.</span>
+      </div>
+    </section>
+
+    <footer>
+      <span>Developer settings page</span>
+      <span>Reads from <code>/api/config</code>.</span>
+    </footer>
+  </div>
+
+  <script src="/js/developer-setting.js"></script>
+</body>
+</html>
+

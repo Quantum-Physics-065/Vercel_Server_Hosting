@@ -67,6 +67,17 @@ router.get('/dashboard/setting', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'server-setting.html'));
 });
 
+// Developer Setting
+router.get('/dashboard/DeverloperSetting', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'developer-setting.html'));
+});
+
+
+router.get('/dashboard/performance', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'performance.html'));
+});
+
+
 router.get('/dashboard/vpn', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'vpn.html'));
 });

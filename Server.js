@@ -73,6 +73,10 @@ app.use(configRoutes.router);
 app.use(authRoutes);
 app.use(statusRoutes);
 
+// certificate endpoints (config + downloads)
+const certificateRoutes = require('./routes/certificateRoutes');
+app.use(certificateRoutes);
+
 // token-based request endpoints
 const tokenRoutes = require('./api/tokenRoutes');
 app.use(tokenRoutes);
@@ -81,6 +85,7 @@ app.use(tokenRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
+
 
 app.use((err, req, res, next) => {
   // eslint-disable-next-line no-console

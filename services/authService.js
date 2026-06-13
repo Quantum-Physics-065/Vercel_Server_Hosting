@@ -58,17 +58,36 @@ function getUserDetails(token, req) {
   };
 }
 
+function buildOrigin(req) {
+  const protocol = req.protocol || (req.headers['x-forwarded-proto'] ? String(req.headers['x-forwarded-proto']) : 'http');
+  const hostHeader = req.get && req.get('host') ? String(req.get('host')) : '';
+
+  // Strip default ports from host rendering.
+  const [hostname, portStr] = hostHeader.split(':');
+  const port = portStr ? Number(portStr) : undefined;
+
+  const isDefaultPort =
+    (protocol === 'http' && port === 80) ||
+    (protocol === 'https' && port === 443);
+
+  if (port && !isDefaultPort) {
+    return `${protocol}://${hostname}:${port}`;
+  }
+  return `${protocol}://${hostname}`;
+}
+
 function buildUserUrl(token, req) {
-  const origin = req.protocol && req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+  const origin = buildOrigin(req);
   return `${origin}/dashboard/user?token=${encodeURIComponent(token)}`;
 }
 
 function buildRequestsUrl(token, req) {
-  const origin = req.protocol && req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+  const origin = buildOrigin(req);
   return `${origin}/token/${encodeURIComponent(token)}/requests`;
 }
 
 module.exports = {
+
   createToken,
   validateToken,
   getUserDetails,
