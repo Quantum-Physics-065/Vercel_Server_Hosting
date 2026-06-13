@@ -48,7 +48,7 @@ function buildCorsOptions() {
 
 app.use(helmet());
 app.use(morgan('combined'));
-app.use(cors(buildCorsOptions()));
+// app.use(cors(buildCorsOptions()));
 app.options('*', cors(buildCorsOptions()));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: false, limit: '20mb' }));
