@@ -134,29 +134,29 @@
       color: white;
       /* background-image: linear-gradient(to right, #b8cbb8 0%, #b8cbb8 0%, #b465da 0%, #cf6cc9 33%, #ee609c 66%, #ee609c 100%); */
       /* background-image: linear-gradient(to right, #00c6fb 0%, #005bea 100%); */
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(168, 85, 247, 0.95));
-      color: #fff;
+      /* background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(168, 85, 247, 0.95)); */
+      background-image: linear-gradient(to left, #4facfe 0%, #00f2fe 100%);
       /* background-image: linear-gradient(to right, #92fe9d 0%, #00c9ff 100%); */
     }
 
-    .nav button {
+    .nav a {
       justify-content: center;
       min-width: 150px;
       padding: 14px 22px;
-      background: rgba(255, 255, 255, 0.09);
+      background-image: linear-gradient(to left, #4facfe 0%, #00f2fe 100%);
       border: 1px solid rgba(255, 255, 255, 0.08);
       text-align: center;
       font-weight: 600;
       border: 1px solid white;
     }
 
-    .nav button.active {
-      background: rgba(255, 255, 255, 0.16);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    .nav a.active {
+      background-image: linear-gradient(to left, #4facfe 0%, #00f2fe 100%);
+      box-shadow: inset 0 0 0 1px linear-gradient(to left, #4facfe 0%, #00f2fe 100%);
     }
 
-    .nav button:hover {
-      background: rgba(255, 255, 255, 0.22);
+    .nav a:hover {
+      background-image: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
       transform: none;
     }
 
@@ -403,7 +403,7 @@
       <div class="logo">
         <div class="logo-mark">FS</div>
         <div>
-          <h1>Server Dashboard</h1>
+          <h2>Server Dashboard</h2>
           <p style="margin: 4px 0 0; color:#94a3b8; font-size:0.92rem;">Storage + connection control</p>
         </div>
       </div>
@@ -414,6 +414,10 @@
         <a href="/dashboard/vpn">VPN Config</a>
         <a href="/dashboard/setting">Server Setting</a>
         <a href="/dashboard/certificates">Server certificates</a>
+        <a href="/dashboard/Token">Generate / Export Token</a>
+        <a href="/dashboard/DeverloperSetting">Developer Setting</a>
+        <a href="/dashboard/performance">Server Performance</a><hr style="border-color:#fff;width:100%;">
+        <a href="/dashboard/login">Login</a>
       </div>
     </aside>
     <main class="main">
@@ -432,19 +436,19 @@
         <div class="stats-grid">
           <div class="metric"><span>Server</span><strong id="overviewServer">Fetching...</strong></div>
           <div class="metric"><span>Port</span><strong id="overviewPort">Fetching...</strong></div>
-          <div class="metric"><span>Storage folder</span><strong id="overviewPath">Fetching...</strong></div>
           <div class="metric"><span>Server URL</span><strong id="overviewUrl">Fetching...</strong></div>
           <div class="metric"><span>Files count</span><strong id="overviewCount">Fetching...</strong></div>
           <div class="metric"><span>Storage size</span><strong id="overviewSize">Fetching...</strong></div>
           <div class="metric"><span>Protocols</span><strong id="overviewProtocols">Fetching...</strong></div>
+          <div class="metric"><span>Storage folder</span><strong id="overviewPath">Fetching...</strong></div>
         </div>
       </section>
     </main>
   </div>
-  <footer class="footer">
+  <!-- <footer class="footer">
     <span>Storage Server Dashboard</span>
     <span>Auto-refresh every 12 seconds</span>
-  </footer>
+  </footer> -->
   
 </body>
 <!-- Script Data -->

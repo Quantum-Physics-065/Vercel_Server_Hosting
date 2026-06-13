@@ -63,9 +63,15 @@ function buildUserUrl(token, req) {
   return `${origin}/dashboard/user?token=${encodeURIComponent(token)}`;
 }
 
+function buildRequestsUrl(token, req) {
+  const origin = req.protocol && req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+  return `${origin}/token/${encodeURIComponent(token)}/requests`;
+}
+
 module.exports = {
   createToken,
   validateToken,
   getUserDetails,
   buildUserUrl,
+  buildRequestsUrl,
 };

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Token Requests</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #050816;
+      color: #eef2ff;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 2.5rem);
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: #eef2ff;
+      text-decoration: none;
+      background: rgba(15,23,42,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: transform 160ms ease, background 160ms ease;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    nav a:hover {
+      background: rgba(79,70,229,0.18);
+      transform: translateY(-1px);
+    }
+
+    .panel {
+      background: rgba(15,23,42,0.82);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.28);
+    }
+
+    .metaRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .metaRow span { color: rgba(226,232,240,0.75); }
+    .metaRow strong { color: #fff; }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .card .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 22px;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95));
+      color: #fff;
+      font-weight: 700;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.06); }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: #eef2ff;
+      padding: 14px 22px;
+    }
+
+    .error { color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Token Requests</h1>
+        <p class="meta" id="statusText" style="margin:8px 0 0; color: rgba(226,232,240,0.75);">Loading…</p>
+      </div>
+      <nav>
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/make">Make</a>
+      </nav>
+    </header>
+
+    <section class="panel">
+      <div class="metaRow">
+        <span>Token</span>
+        <strong class="mono" id="tokenText">—</strong>
+      </div>
+
+      <div class="actions">
+        <button id="refreshButton" type="button" class="secondary">Refresh</button>
+      </div>
+
+      <div style="height:12px;"></div>
+
+      <div class="list" id="requestsList">
+        <div class="card">Fetching stored requests…</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/js/token-requests.js"></script>
+</body>
+</html>
+

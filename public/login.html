@@ -30,7 +30,10 @@
     <div id="result" style="display:none; margin-top:18px; padding:18px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);">
       <p style="margin:0 0 8px; color:#d1d5db;">Your login URL:</p>
       <p><a id="resultUrl" class="link" target="_blank" rel="noopener"></a></p>
-      <button id="copyButton" style="margin-top:12px; width:auto;">Copy link</button>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="copyButton" style="width:auto;">Copy link</button>
+        <a id="resultRequestsUrl" class="link" target="_blank" rel="noopener" style="display:none; align-items:center; background:rgba(255,255,255,0.08); padding:10px 14px; border-radius:16px;">Open requests page</a>
+      </div>
     </div>
   </main>
 

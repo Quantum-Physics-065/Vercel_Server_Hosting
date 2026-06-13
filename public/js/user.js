@@ -42,6 +42,13 @@
         await navigator.clipboard.writeText(window.location.href);
         statusText.textContent = 'Dashboard URL copied to clipboard.';
       });
+
+      const requestsLink = document.getElementById('requestsLink');
+      if (requestsLink) {
+        requestsLink.style.display = 'inline-flex';
+        requestsLink.href = `/dashboard/user-requests?token=${encodeURIComponent(token)}`;
+        requestsLink.textContent = 'View token requests';
+      }
     } catch (err) {
       statusText.textContent = `Error: ${err.message}`;
       statusText.classList.add('error');

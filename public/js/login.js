@@ -28,6 +28,13 @@
       resultUrl.textContent = data.url;
       resultUrl.href = data.url;
       statusText.textContent = `Token generated for ${data.username}. Expires in ${data.expiresIn} seconds.`;
+
+      const requestLink = document.getElementById('resultRequestsUrl');
+      if (data.requestsUrl) {
+        requestLink.style.display = 'inline-flex';
+        requestLink.textContent = 'Open requests page';
+        requestLink.href = data.requestsUrl;
+      }
     } catch (err) {
       statusText.textContent = `Login error: ${err.message}`;
     } finally {

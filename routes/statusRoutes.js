@@ -71,8 +71,20 @@ router.get('/dashboard/vpn', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'vpn.html'));
 });
 
+router.get('/dashboard/make', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'make.html'));
+});
+
+router.get('/dashboard/user-requests', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'token-requests.html'));
+});
+
 router.get('/status', (req, res) => {
   res.redirect('/dashboard');
+});
+
+router.get('/token/:token/requests', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'token-requests.html'));
 });
 
 router.get('/', (req, res) => {
@@ -80,3 +92,4 @@ router.get('/', (req, res) => {
 });
 
 module.exports = router;
+
