@@ -20,7 +20,7 @@
   "license": "MIT",
   "author": "File Server Developer",
   "type": "commonjs",
-  "main": "Server.js",
+  "main": "server.js",
   "scripts": {
     "start": "node Server.js",
     "dev": "nodemon Server.js",

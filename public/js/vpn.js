@@ -25,7 +25,33 @@
     }
   }
 
+  async function applyVpnConfig() {
+    try {
+      // This app treats VPN “connect” as applying runtime config.
+      // Backend is already wired through /api/config.
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          vpnServer: vpnServer.textContent === 'Not configured' ? '' : vpnServer.textContent,
+          vpnPort: Number(vpnPort.textContent) || 0,
+          vpnProtocol: vpnProtocol.textContent === 'Not configured' ? '' : vpnProtocol.textContent,
+          vpnUsername: vpnUsername.textContent === 'Not configured' ? '' : vpnUsername.textContent,
+          vpnPassword: vpnPassword.textContent === 'Empty' ? '' : '',
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Apply failed: ${response.status}`);
+      await loadVpnConfig();
+    } catch (err) {
+      vpnServer.textContent = `Error: ${err.message}`;
+    }
+  }
+
+  const applyVpnBtn = document.getElementById('applyVpn');
+  applyVpnBtn?.addEventListener('click', applyVpnConfig);
   refreshVpn?.addEventListener('click', loadVpnConfig);
   window.addEventListener('DOMContentLoaded', loadVpnConfig);
 })();
+
 

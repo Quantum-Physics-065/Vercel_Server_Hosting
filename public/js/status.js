@@ -29,7 +29,15 @@
           .map(([protocol]) => protocol.toUpperCase())
           .join(', ') || 'None';
 
+      // Latest token placeholder (supports localStorage from token generator)
+      let latest = null;
+      try { latest = localStorage.getItem('latestGeneratedToken'); } catch {}
+      if (status.token) latest = status.token;
+      document.getElementById('overviewToken').textContent = latest || '—';
+
+
       overviewBadge.textContent = 'Online';
+
       overviewBadge.classList.remove('offline');
     } catch {
       overviewBadge.textContent = 'Offline';

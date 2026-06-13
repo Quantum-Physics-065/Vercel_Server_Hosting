@@ -67,15 +67,20 @@ router.get('/dashboard/setting', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'server-setting.html'));
 });
 
-// Developer Setting
+// Developer Setting (kept existing typo route for backwards-compat)
 router.get('/dashboard/DeverloperSetting', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'developer-setting.html'));
 });
 
+// Correct alias route
+router.get('/dashboard/developer-setting', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'developer-setting.html'));
+});
 
 router.get('/dashboard/performance', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'performance.html'));
 });
+
 
 
 router.get('/dashboard/vpn', (req, res) => {
