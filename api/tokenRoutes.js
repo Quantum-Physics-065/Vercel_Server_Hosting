@@ -107,6 +107,32 @@ router.post('/token/:token/upload', upload.single('file'), (req, res) => {
   }
 });
 
+// Download a stored request or upload file by token.
+router.get('/token/:token/requests/download', (req, res) => {
+  const user = requireValidToken(req, res);
+  if (!user) return;
+
+  const token = req.params.token;
+  const filename = String(req.query.name || '').trim();
+  if (!filename) {
+    return res.status(400).json({ ok: false, error: 'Missing file name' });
+  }
+
+  const safeName = path.basename(filename);
+  if (safeName !== filename) {
+    return res.status(400).json({ ok: false, error: 'Invalid file name' });
+  }
+
+  const dir = ensureTokenDir(token);
+  const filePath = path.join(dir, safeName);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ ok: false, error: 'Stored request file not found' });
+  }
+
+  res.download(filePath, safeName);
+});
+
 // List what was stored for a token.
 router.get('/token/:token/requests', (req, res) => {
   const user = requireValidToken(req, res);

@@ -1,13 +1,20 @@
 (() => {
   const statusText = document.getElementById('statusText');
   const tokenText = document.getElementById('tokenText');
+  const tokenInput = document.getElementById('tokenInput');
+  const loadTokenButton = document.getElementById('loadTokenButton');
+  const copyTokenButton = document.getElementById('copyTokenButton');
   const requestsList = document.getElementById('requestsList');
   const refreshButton = document.getElementById('refreshButton');
 
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  // expected: /token/<token>/requests or /dashboard/user-requests?token=<token>
   const queryParams = new URLSearchParams(window.location.search);
-  const token = queryParams.get('token') || (pathParts.length >= 3 ? pathParts[1] : null);
+
+  function getTokenFromPage() {
+    const entered = (tokenInput?.value || '').trim();
+    if (entered) return entered;
+    return queryParams.get('token') || (pathParts.length >= 3 ? pathParts[1] : null);
+  }
 
   function setStatus(msg, isError = false) {
     statusText.textContent = msg;
@@ -26,14 +33,21 @@
     return new Date(value).toLocaleString();
   }
 
+  function setTokenDisplay(token) {
+    if (tokenInput) tokenInput.value = token || '';
+    tokenText.textContent = token || '—';
+  }
+
   async function loadRequests() {
+    const token = getTokenFromPage();
     if (!token) {
-      setStatus('Token is missing in URL.', true);
+      setStatus('Paste a token and click Load token requests.', true);
       requestsList.innerHTML = '<div class="card">No token provided.</div>';
+      setTokenDisplay('—');
       return;
     }
 
-    tokenText.textContent = token;
+    setTokenDisplay(token);
     setStatus('Loading stored requests…');
     requestsList.innerHTML = '<div class="card">Fetching…</div>';
 
@@ -57,21 +71,20 @@
           const filename = item.filename;
           const size = item.size;
           const modified = item.modified;
-          // Not implementing file viewer; we only show stored list.
           return `
             <div class="card">
               <div class="row">
-                <div>
+                <div style="min-width:220px;">
                   <div class="meta">Stored file</div>
                   <div class="mono">${filename}</div>
                 </div>
-                <div>
-                  <div class="meta">Size</div>
-                  <div>${formatBytes(size)}</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end;">
+                  <a class="secondary" href="/token/${encodeURIComponent(token)}/requests/download?name=${encodeURIComponent(filename)}" target="_blank" rel="noopener">Download</a>
+                  <a class="secondary" href="/dashboard/make?token=${encodeURIComponent(token)}">Reuse token</a>
                 </div>
               </div>
               <div style="height:10px;"></div>
-              <div class="meta">Modified: ${toLocal(modified)}</div>
+              <div class="meta">Size: ${formatBytes(size)} · Modified: ${toLocal(modified)}</div>
             </div>
           `;
         })
@@ -84,7 +97,31 @@
     }
   }
 
+  loadTokenButton?.addEventListener('click', loadRequests);
   refreshButton?.addEventListener('click', loadRequests);
-  window.addEventListener('DOMContentLoaded', loadRequests);
+  copyTokenButton?.addEventListener('click', async () => {
+    const token = getTokenFromPage();
+    if (!token) {
+      setStatus('No token available to copy.', true);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(token);
+      setStatus('Token copied to clipboard.', false);
+    } catch {
+      setStatus('Copy failed.', true);
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const initialToken = getTokenFromPage();
+    if (initialToken) {
+      loadRequests();
+    } else {
+      setStatus('Paste a token and click Load token requests.');
+      setTokenDisplay('—');
+      requestsList.innerHTML = '<div class="card">Enter a token then click Load token requests.</div>';
+    }
+  });
 })();
 

@@ -9,6 +9,12 @@
 
   const resultText = document.getElementById('resultText');
   const exampleRequestsUrl = document.getElementById('exampleRequestsUrl');
+  const params = new URLSearchParams(window.location.search);
+  const prefilledToken = params.get('token') || '';
+
+  if (prefilledToken) {
+    tokenInput.value = prefilledToken;
+  }
 
   function getToken() {
     return (tokenInput.value || '').trim();

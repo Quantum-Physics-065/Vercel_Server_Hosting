@@ -92,6 +92,26 @@
       justify-content: space-between;
     }
 
+    .field {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      font-weight: 700;
+      color: rgba(226,232,240,0.78);
+    }
+
+    .field input {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #eef2ff;
+      padding: 14px 16px;
+    }
+
     .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     }
@@ -146,8 +166,21 @@
         <strong class="mono" id="tokenText">—</strong>
       </div>
 
+      <div class="field">
+        <label for="tokenInput">Paste a token to inspect stored requests</label>
+        <input id="tokenInput" type="text" placeholder="Paste token here or load from URL" />
+      </div>
+
       <div class="actions">
+        <button id="loadTokenButton" type="button" class="secondary">Load token requests</button>
+        <button id="copyTokenButton" type="button" class="secondary">Copy token</button>
+        <a href="/dashboard/make" class="secondary">Send new request</a>
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
         <button id="refreshButton" type="button" class="secondary">Refresh</button>
+        <a href="/dashboard" class="secondary">Home</a>
+        <a href="/dashboard/token-generate" class="secondary">Generate token</a>
       </div>
 
       <div style="height:12px;"></div>

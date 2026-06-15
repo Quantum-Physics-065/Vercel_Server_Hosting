@@ -95,6 +95,10 @@ router.get('/dashboard/user-requests', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'token-requests.html'));
 });
 
+router.get('/dashboard/token-requests', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'token-requests.html'));
+});
+
 router.get('/status', (req, res) => {
   res.redirect('/dashboard');
 });

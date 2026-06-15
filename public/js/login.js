@@ -4,7 +4,15 @@
   const statusText = document.getElementById('statusText');
   const result = document.getElementById('result');
   const resultUrl = document.getElementById('resultUrl');
+  const resultToken = document.getElementById('resultToken');
+  const resultRequestsUrl = document.getElementById('resultRequestsUrl');
   const copyButton = document.getElementById('copyButton');
+
+  function hideExtras() {
+    resultToken.textContent = '';
+    resultRequestsUrl.style.display = 'none';
+    result.style.display = 'none';
+  }
 
   async function login() {
     const username = usernameInput.value.trim();
@@ -14,6 +22,7 @@
     }
     loginButton.disabled = true;
     statusText.textContent = 'Generating token...';
+    hideExtras();
 
     try {
       const resp = await fetch('/api/login', {
@@ -27,14 +36,15 @@
       result.style.display = 'block';
       resultUrl.textContent = data.url;
       resultUrl.href = data.url;
-      statusText.textContent = `Token generated for ${data.username}. Expires in ${data.expiresIn} seconds.`;
+      resultToken.textContent = data.token || '';
 
-      const requestLink = document.getElementById('resultRequestsUrl');
       if (data.requestsUrl) {
-        requestLink.style.display = 'inline-flex';
-        requestLink.textContent = 'Open requests page';
-        requestLink.href = data.requestsUrl;
+        resultRequestsUrl.style.display = 'inline-flex';
+        resultRequestsUrl.textContent = 'Open requests page';
+        resultRequestsUrl.href = data.requestsUrl;
       }
+
+      statusText.textContent = `Token generated for ${data.username}. Expires in ${data.expiresIn} seconds.`;
     } catch (err) {
       statusText.textContent = `Login error: ${err.message}`;
     } finally {
@@ -48,5 +58,7 @@
     await navigator.clipboard.writeText(resultUrl.href);
     statusText.textContent = 'Link copied to clipboard.';
   });
+
+  window.addEventListener('DOMContentLoaded', hideExtras);
 })();
 
