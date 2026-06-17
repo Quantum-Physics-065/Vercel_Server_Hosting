@@ -39,7 +39,7 @@ function getUserDetails(token, req) {
     username: user.username,
     token: user.token,
     createdAt: user.createdAt,
-    ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+    ip: req.ip || req.headers['x-forwarded-for'] || (req.connection && req.connection.remoteAddress) || (req.socket && req.socket.remoteAddress) || 'unknown',
     userAgent: req.get('User-Agent') || null,
     server: {
       protocol: config.protocol,

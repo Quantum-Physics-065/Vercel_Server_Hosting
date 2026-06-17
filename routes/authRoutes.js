@@ -31,8 +31,20 @@ router.get('/dashboard/login', (req, res) => {
   res.sendFile(require('path').join(__dirname, '..', 'public', 'login.html'));
 });
 
-router.get('/dashboard/user', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '..', 'public', 'user.html'));
+router.all('/dashboard/user', (req, res) => {
+  const token = req.query.token || req.body?.token || '';
+  
+  const requestDetails = {
+    method: req.method,
+    url: req.url,
+    token: token,
+    query: req.query,
+    body: req.body,
+    headers: req.headers
+  };
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(requestDetails, null, 2));
 });
 
 // Token generator page + API
