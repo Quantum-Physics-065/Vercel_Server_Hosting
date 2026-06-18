@@ -275,9 +275,27 @@
           <label for="uploadFileInput">Choose file</label>
           <input id="uploadFileInput" type="file" />
         </div>
+        <div class="field">
+          <label for="chunkSizeSelect">Chunk size</label>
+          <select id="chunkSizeSelect">
+            <option value="524288">512 KB</option>
+            <option value="1048576" selected>1 MB</option>
+            <option value="2097152">2 MB</option>
+          </select>
+        </div>
         <div class="actions">
           <button id="uploadFileButton" type="button">Upload file</button>
+          <button id="bulkUploadButton" type="button">Bulk upload</button>
           <button id="refreshFilesButton" type="button">Refresh list</button>
+        </div>
+        <div class="meta" id="uploadProgressWrap" style="display:none;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+            <span id="uploadProgressText">0%</span>
+            <span id="uploadProgressBytes">0 / 0 bytes</span>
+          </div>
+          <div style="margin-top:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;height:10px;">
+            <div id="uploadProgressBar" style="width:0%;height:100%;background:linear-gradient(90deg,#22c55e,#0ea5e9);transition:width 0.2s ease;"></div>
+          </div>
         </div>
         <p class="meta" id="uploadNote">Upload a file directly to the storage directory. Existing files are overwritten by default.</p>
       </div>
@@ -290,6 +308,8 @@
           <span id="fileInfoText" class="meta">No file loaded yet.</span>
         </div>
       </div>
+
+      <input id="bulkUploadInput" type="file" multiple hidden />
     </div>
   </div>
 

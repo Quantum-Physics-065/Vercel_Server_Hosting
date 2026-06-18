@@ -12,10 +12,30 @@ function parsePositiveInt(value) {
 
 function validateFilename(req, res) {
   const name = req.query.name;
-  if (!name) return res.status(400).json({ error: 'Missing file name' });
+  if (!name) {
+    res.status(400).json({ error: 'Missing file name' });
+    return null;
+  }
   const filePath = storageService.safeFilePath(name);
-  if (!filePath) return res.status(400).json({ error: 'Invalid file name' });
+  if (!filePath) {
+    res.status(400).json({ error: 'Invalid file name' });
+    return null;
+  }
   return filePath;
+}
+
+function parseRangeHeader(rangeHeader, size) {
+  if (!rangeHeader || !rangeHeader.startsWith('bytes=')) return null;
+  const range = rangeHeader.slice(6);
+  const parts = range.split(',')[0].split('-');
+  const start = Number(parts[0]);
+  const end = parts[1] ? Number(parts[1]) : size - 1;
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || end >= size) {
+    return null;
+  }
+
+  return { start, end };
 }
 
 router.get('/file', (req, res) => {
@@ -26,12 +46,39 @@ router.get('/file', (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
 
   const stat = fs.statSync(filePath);
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader('Content-Length', String(stat.size));
-  res.setHeader('Content-Disposition', `attachment; filename="${req.query.name}"`);
+  const fileName = String(req.query.name || path.basename(filePath));
+  const range = parseRangeHeader(req.headers.range, stat.size);
 
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  res.setHeader('Cache-Control', 'no-cache');
+
+  if (range) {
+    res.status(206);
+    res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${stat.size}`);
+    res.setHeader('Content-Length', String(range.end - range.start + 1));
+
+    const stream = fs.createReadStream(filePath, { start: range.start, end: range.end, highWaterMark: 1024 * 1024 });
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Unable to stream file' });
+      } else {
+        res.end();
+      }
+    });
+    return stream.pipe(res);
+  }
+
+  res.setHeader('Content-Length', String(stat.size));
   const stream = fs.createReadStream(filePath, { highWaterMark: 1024 * 1024 });
-  stream.on('error', () => res.status(500).end());
+  stream.on('error', () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Unable to stream file' });
+    } else {
+      res.end();
+    }
+  });
   stream.pipe(res);
 });
 
@@ -180,6 +227,10 @@ router.post('/file/chunk', (req, res) => {
   const totalParts = parsePositiveInt(req.query.total);
   const overwrite = (req.query.mode || 'overwrite').toString().toLowerCase() !== 'append';
 
+  if (!partIndex || !totalParts) {
+    return res.status(400).json({ error: 'Both query params part and total are required for chunked uploads' });
+  }
+
   if (overwrite && partIndex === 1 && fs.existsSync(tmpPath)) {
     try { fs.unlinkSync(tmpPath); } catch (_) {}
   }
@@ -192,21 +243,25 @@ router.post('/file/chunk', (req, res) => {
     received += chunk.length;
     if (contentLength !== null && received > contentLength) {
       writeStream.destroy();
-      res.status(400).json({ error: 'Too much data sent' });
+      return res.status(400).json({ error: 'Too much data sent' });
     }
   });
 
   req.on('error', () => {
-    writeStream.destroy();
-    res.status(500).json({ error: 'Chunk upload stream error' });
+    if (!res.headersSent) {
+      writeStream.destroy();
+      return res.status(500).json({ error: 'Chunk upload stream error' });
+    }
   });
 
   writeStream.on('error', () => {
-    res.status(500).json({ error: 'Chunk write error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Chunk write error' });
+    }
   });
 
   writeStream.on('finish', () => {
-    if (totalParts && partIndex === totalParts) {
+    if (partIndex === totalParts) {
       try {
         fs.renameSync(tmpPath, filePath);
       } catch (err) {
@@ -217,14 +272,47 @@ router.post('/file/chunk', (req, res) => {
     res.status(200).json({
       ok: true,
       filename: req.query.name,
-      part: partIndex || null,
-      totalParts: totalParts || null,
+      part: partIndex,
+      totalParts,
       bytes: received,
-      ready: totalParts ? partIndex === totalParts : true,
+      ready: partIndex === totalParts,
     });
   });
 
   req.pipe(writeStream);
+});
+
+router.post('/file/bulk', express.json({ limit: '50mb' }), (req, res) => {
+  const items = Array.isArray(req.body) ? req.body : req.body?.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Expected an array of file objects in the request body' });
+  }
+
+  const results = [];
+  let totalBytes = 0;
+
+  for (const item of items) {
+    if (!item || typeof item.name !== 'string' || (typeof item.content !== 'string' && !Buffer.isBuffer(item.content))) {
+      return res.status(400).json({ error: 'Each file item must include a string name and content' });
+    }
+
+    const filePath = storageService.safeFilePath(item.name);
+    if (!filePath) {
+      return res.status(400).json({ error: `Invalid file name: ${item.name}` });
+    }
+
+    const content = Buffer.isBuffer(item.content) ? item.content : Buffer.from(item.content, 'utf8');
+    fs.writeFileSync(filePath, content);
+    totalBytes += content.length;
+    results.push({ filename: item.name, bytes: content.length });
+  }
+
+  res.status(201).json({
+    ok: true,
+    uploaded: results.length,
+    totalBytes,
+    files: results,
+  });
 });
 
 router.get('/files', (req, res) => {

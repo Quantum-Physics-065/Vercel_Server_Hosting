@@ -7,6 +7,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
@@ -20,9 +21,13 @@ const configService = require('./services/configService');
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map((value) => value.trim()).filter(Boolean)
-  : ['*'];
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
 
 function buildCorsOptions() {
   if (allowedOrigins.includes('*')) {
@@ -46,6 +51,13 @@ function buildCorsOptions() {
   };
 }
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -64,9 +76,20 @@ app.use(helmet({
 app.use(morgan('combined'));
 app.use(cors(buildCorsOptions()));
 app.options('*', cors(buildCorsOptions()));
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: false, limit: '20mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/api', apiLimiter);
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptimeMs: process.uptime() * 1000,
+  });
+});
 
 app.use(fileRoutes);
 app.use(configRoutes.router);
@@ -83,17 +106,26 @@ app.use(tokenRoutes);
 
 
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+  res.status(404).json({
+    ok: false,
+    error: 'Not found',
+    path: req.originalUrl,
+  });
 });
-
 
 app.use((err, req, res, next) => {
   // eslint-disable-next-line no-console
   console.error(err);
   if (err instanceof Error && err.message.startsWith('CORS')) {
-    return res.status(403).json({ error: err.message });
+    return res.status(403).json({ ok: false, error: err.message, path: req.originalUrl });
   }
-  res.status(500).json({ error: 'Internal server error' });
+
+  res.status(500).json({
+    ok: false,
+    error: 'Internal server error',
+    path: req.originalUrl,
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
 });
 
 storageService.ensureStorageDir();

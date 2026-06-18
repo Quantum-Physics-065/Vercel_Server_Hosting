@@ -7,8 +7,15 @@
   const uploadInput = document.getElementById('uploadFileInput');
   const uploadNameInput = document.getElementById('uploadNameInput');
   const uploadButton = document.getElementById('uploadFileButton');
+  const bulkUploadButton = document.getElementById('bulkUploadButton');
+  const bulkUploadInput = document.getElementById('bulkUploadInput');
   const refreshFilesButton = document.getElementById('refreshFilesButton');
   const uploadNote = document.getElementById('uploadNote');
+  const progressWrap = document.getElementById('uploadProgressWrap');
+  const progressText = document.getElementById('uploadProgressText');
+  const progressBytes = document.getElementById('uploadProgressBytes');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const chunkSizeSelect = document.getElementById('chunkSizeSelect');
 
   let selectedFile = null;
 
@@ -21,6 +28,21 @@
 
   function toLocalString(value) {
     return new Date(value).toLocaleString();
+  }
+
+  function setUploadProgress(done, total, label) {
+    if (!total) {
+      progressWrap.style.display = 'none';
+      return;
+    }
+    progressWrap.style.display = 'block';
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    progressText.textContent = `${percent}%`;
+    progressBytes.textContent = `${formatBytes(done)} / ${formatBytes(total)}`;
+    progressBar.style.width = `${Math.min(percent, 100)}%`;
+    if (label) {
+      uploadNote.textContent = label;
+    }
   }
 
   function renderFiles(files) {
@@ -73,6 +95,50 @@
     }
   }
 
+  async function uploadSingleFile(file, options = {}) {
+    const filename = options.filename || uploadNameInput.value.trim() || file.name;
+    const chunkSize = Number(chunkSizeSelect.value || 1048576);
+    const useChunked = options.chunked !== false && file.size > chunkSize;
+
+    if (useChunked) {
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      setUploadProgress(0, file.size, `Chunking ${filename} into ${totalChunks} parts...`);
+
+      for (let index = 0; index < totalChunks; index += 1) {
+        const start = index * chunkSize;
+        const end = Math.min(start + chunkSize, file.size);
+        const chunk = file.slice(start, end);
+        const response = await fetch(`/file/chunk?name=${encodeURIComponent(filename)}&part=${index + 1}&total=${totalChunks}`, {
+          method: 'POST',
+          body: chunk,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || `Chunk upload failed ${response.status}`);
+        }
+
+        const data = await response.json();
+        setUploadProgress(end, file.size, `Uploaded chunk ${data.part}/${data.totalParts} for ${filename}`);
+      }
+
+      return { filename, bytes: file.size };
+    }
+
+    const response = await fetch(`/file?name=${encodeURIComponent(filename)}`, {
+      method: 'POST',
+      body: file,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.error || `Upload failed ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  }
+
   async function uploadFile() {
     const file = uploadInput.files[0];
     if (!file) {
@@ -82,35 +148,74 @@
 
     const filename = uploadNameInput.value.trim() || file.name;
     uploadButton.disabled = true;
+    bulkUploadButton.disabled = true;
     uploadButton.textContent = 'Uploading…';
-    uploadNote.textContent = `Uploading ${filename}…`;
+    setUploadProgress(0, file.size, `Uploading ${filename}…`);
 
     try {
-      const response = await fetch(`/file?name=${encodeURIComponent(filename)}`, {
-        method: 'POST',
-        body: file,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Upload failed ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await uploadSingleFile(file);
       uploadNote.textContent = `Uploaded ${data.filename} (${data.bytes} bytes)`;
       uploadInput.value = '';
       uploadNameInput.value = '';
+      setUploadProgress(data.bytes, data.bytes, `Uploaded ${data.filename}`);
       await loadFiles();
     } catch (err) {
       uploadNote.textContent = `Upload error: ${err.message}`;
+      setUploadProgress(0, 0, '');
     } finally {
       uploadButton.disabled = false;
+      bulkUploadButton.disabled = false;
       uploadButton.textContent = 'Upload file';
+      progressWrap.style.display = 'none';
+    }
+  }
+
+  async function uploadBulkFiles() {
+    const files = bulkUploadInput.files;
+    if (!files.length) {
+      uploadNote.textContent = 'Select one or more files to bulk upload.';
+      return;
+    }
+
+    uploadButton.disabled = true;
+    bulkUploadButton.disabled = true;
+    bulkUploadButton.textContent = 'Uploading…';
+    const totalBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    let sentBytes = 0;
+    setUploadProgress(0, totalBytes, `Bulk uploading ${files.length} files...`);
+
+    try {
+      for (const file of files) {
+        const result = await uploadSingleFile(file, { chunked: true, filename: file.name });
+        sentBytes += result.bytes || file.size;
+        setUploadProgress(sentBytes, totalBytes, `Uploaded ${file.name}`);
+      }
+      uploadNote.textContent = `Bulk upload complete (${files.length} files)`;
+      await loadFiles();
+    } catch (err) {
+      uploadNote.textContent = `Bulk upload error: ${err.message}`;
+      setUploadProgress(0, 0, '');
+    } finally {
+      uploadButton.disabled = false;
+      bulkUploadButton.disabled = false;
+      bulkUploadButton.textContent = 'Bulk upload';
+      progressWrap.style.display = 'none';
+      bulkUploadInput.value = '';
     }
   }
 
   refreshFilesButton.addEventListener('click', loadFiles);
   uploadButton.addEventListener('click', uploadFile);
+  bulkUploadButton.addEventListener('click', () => {
+    bulkUploadInput.click();
+  });
+  bulkUploadInput.addEventListener('change', () => {
+    if (bulkUploadInput.files.length) {
+      uploadNote.textContent = `${bulkUploadInput.files.length} file(s) selected for bulk upload.`;
+      bulkUploadButton.textContent = `Bulk upload (${bulkUploadInput.files.length})`;
+      uploadBulkFiles();
+    }
+  });
 
   async function selectFile(filename) {
     selectedFile = filename;

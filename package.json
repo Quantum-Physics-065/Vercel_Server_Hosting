@@ -22,8 +22,8 @@
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "start": "node Server.js",
-    "prod": "pm2 start Server.js --name file-server",
+    "start": "node server.js",
+    "prod": "pm2 start server.js --name file-server",
     "test": "jest",
     "lint": "eslint src/",
     "docs": "swagger-cli validate src/swagger.yaml && node src/swagger.js",
