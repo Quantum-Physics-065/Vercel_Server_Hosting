@@ -23,11 +23,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node Server.js",
-    "dev": "nodemon Server.js",
     "prod": "pm2 start Server.js --name file-server",
     "test": "jest",
     "lint": "eslint src/",
-    "docs": "swagger-cli validate src/swagger.yaml && node src/swagger.js"
+    "docs": "swagger-cli validate src/swagger.yaml && node src/swagger.js",
+    "build": "echo 'Skipping default build'",
+    "dev": "vercel dev"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
