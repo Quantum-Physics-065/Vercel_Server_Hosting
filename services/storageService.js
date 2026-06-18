@@ -2,9 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 const MAX_FILENAME_LENGTH = 255;
+const isVercelRuntime = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const FALLBACK_UPLOAD_DIR = isVercelRuntime ? '/tmp/file-server-storage' : path.join(__dirname, '..', 'storage');
 const UPLOAD_DIR = process.env.UPLOAD_DIR
   ? path.resolve(process.env.UPLOAD_DIR)
-  : path.join(__dirname, '..', 'storage');
+  : FALLBACK_UPLOAD_DIR;
+
+const memoryStore = globalThis.__FILE_SERVER_MEMORY_STORE__ || (globalThis.__FILE_SERVER_MEMORY_STORE__ = new Map());
 
 function sanitizeFilename(filename) {
   if (!filename || typeof filename !== 'string') return null;
@@ -20,7 +24,13 @@ function sanitizeFilename(filename) {
 }
 
 function ensureStorageDir() {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  } catch (error) {
+    if (error && error.code !== 'EACCES') {
+      throw error;
+    }
+  }
 }
 
 function safeFilePath(filename) {
@@ -35,35 +45,108 @@ function tempFilePath(filename) {
   return path.join(UPLOAD_DIR, `${safeName}.part`);
 }
 
+function isMemoryStoreFile(filename) {
+  return memoryStore.has(filename);
+}
+
+function getFileMeta(filePath, filename) {
+  if (isVercelRuntime && isMemoryStoreFile(filename)) {
+    const entry = memoryStore.get(filename);
+    return {
+      filename,
+      size: entry.buffer.length,
+      modified: entry.modified,
+    };
+  }
+
+  const stat = fs.statSync(filePath);
+  return {
+    filename,
+    size: stat.size,
+    modified: stat.mtime,
+  };
+}
+
 function listFiles() {
   ensureStorageDir();
+
+  if (isVercelRuntime) {
+    return Array.from(memoryStore.entries()).map(([filename, entry]) => ({
+      filename,
+      size: entry.buffer.length,
+      modified: entry.modified,
+    }));
+  }
+
   return fs
     .readdirSync(UPLOAD_DIR)
     .filter((item) => {
       const fullPath = path.join(UPLOAD_DIR, item);
       return fs.statSync(fullPath).isFile() && !item.endsWith('.part');
     })
-    .map((filename) => {
-      const fullPath = path.join(UPLOAD_DIR, filename);
-      const stat = fs.statSync(fullPath);
-      return {
-        filename,
-        size: stat.size,
-        modified: stat.mtime,
-      };
-    });
+    .map((filename) => getFileMeta(path.join(UPLOAD_DIR, filename), filename));
 }
 
 function fileExists(filename) {
   const filePath = safeFilePath(filename);
-  return filePath && fs.existsSync(filePath);
+  if (!filePath) return false;
+  if (isVercelRuntime && isMemoryStoreFile(filename)) return true;
+  return fs.existsSync(filePath);
 }
 
 function deleteFile(filename) {
   const filePath = safeFilePath(filename);
-  if (!filePath || !fs.existsSync(filePath)) return false;
+  if (!filePath) return false;
+  if (isVercelRuntime) {
+    if (!memoryStore.has(filename)) return false;
+    memoryStore.delete(filename);
+    return true;
+  }
+  if (!fs.existsSync(filePath)) return false;
   fs.unlinkSync(filePath);
   return true;
+}
+
+function writeBuffer(filename, content) {
+  const safeName = sanitizeFilename(filename);
+  if (!safeName) {
+    throw new Error('Invalid filename');
+  }
+
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+  if (isVercelRuntime) {
+    memoryStore.set(safeName, {
+      buffer,
+      modified: new Date(),
+    });
+    return {
+      filename: safeName,
+      size: buffer.length,
+      modified: new Date(),
+    };
+  }
+
+  const filePath = path.join(UPLOAD_DIR, safeName);
+  ensureStorageDir();
+  fs.writeFileSync(filePath, buffer);
+  return getFileMeta(filePath, safeName);
+}
+
+function readBuffer(filename) {
+  const safeName = sanitizeFilename(filename);
+  if (!safeName) {
+    throw new Error('Invalid filename');
+  }
+
+  if (isVercelRuntime && memoryStore.has(safeName)) {
+    return memoryStore.get(safeName).buffer;
+  }
+
+  const filePath = path.join(UPLOAD_DIR, safeName);
+  if (!fs.existsSync(filePath)) {
+    throw new Error('File not found');
+  }
+  return fs.readFileSync(filePath);
 }
 
 function getStats() {
@@ -75,6 +158,7 @@ function getStats() {
     count: files.length,
     totalSize,
     files,
+    storageMode: isVercelRuntime ? 'memory+tmp' : 'filesystem',
   };
 }
 
@@ -87,4 +171,6 @@ module.exports = {
   fileExists,
   deleteFile,
   getStats,
+  writeBuffer,
+  readBuffer,
 };

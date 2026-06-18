@@ -7,13 +7,19 @@ const router = express.Router();
 router.get('/api/certificates', (req, res) => {
   try {
     const paths = certificateService.getConfiguredCertificatePaths();
-    res.json({ ok: true, ...paths });
+    res.json({
+      ok: true,
+      ...paths,
+      runtime: process.env.VERCEL ? 'vercel-serverless' : 'local',
+      note: process.env.VERCEL
+        ? 'Certificate files are not read from disk on Vercel. Use environment variables or secret storage instead.'
+        : 'Certificate files can be read from configured paths in local development.',
+    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message || 'Failed to load certificate paths' });
   }
 });
 
-// Download endpoints used by public/js/certificates.js
 router.get('/certificate/download', (req, res) => {
   try {
     const type = String(req.query.type || '').toLowerCase();
@@ -31,20 +37,27 @@ router.get('/certificate/download', (req, res) => {
       selected = sslCaPath;
       mime = 'application/x-pem-file';
     } else {
-      return res.status(400).send('Invalid type. Use type=cert|key|ca');
+      return res.status(400).json({ ok: false, error: 'Invalid type. Use type=cert|key|ca' });
     }
 
     if (!selected) {
-      return res.status(404).send(`Certificate path not configured for type=${type}`);
+      return res.status(404).json({ ok: false, error: `Certificate path not configured for type=${type}` });
+    }
+
+    if (process.env.VERCEL) {
+      return res.status(501).json({
+        ok: false,
+        error: 'Certificate download is not supported in Vercel serverless runtime.',
+        type,
+      });
     }
 
     const file = certificateService.safeReadFile(path.resolve(selected));
-
     res.setHeader('Content-Type', mime);
     res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
-    res.status(200).send(file.buffer);
+    return res.status(200).send(file.buffer);
   } catch (err) {
-    res.status(400).send(err.message || 'Unable to download certificate');
+    return res.status(400).json({ ok: false, error: err.message || 'Unable to download certificate' });
   }
 });
 

@@ -4,20 +4,14 @@ const configService = require('./configService');
 
 function normalizePath(p) {
   if (!p || typeof p !== 'string') return '';
-  const v = p.trim();
-  return v;
+  return p.trim();
 }
 
 function isSafeAbsoluteFilePath(absPath) {
-  // Only allow absolute paths (prevents relative traversal surprises)
-  // and prevent returning weird values.
   if (!absPath) return false;
   if (!path.isAbsolute(absPath)) return false;
-
   const normalized = path.normalize(absPath);
-  // Disallow path segments that commonly indicate traversal.
   if (normalized.includes('..' + path.sep) || normalized.includes('..' + '/')) return false;
-
   return true;
 }
 
@@ -35,12 +29,11 @@ function safeReadFile(absPath) {
   if (!isSafeAbsoluteFilePath(resolved)) {
     throw new Error('Unsafe file path');
   }
-  if (!fs.existsSync(resolved)) {
-    throw new Error('File not found');
+
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+    throw new Error('Certificate file is not available in this runtime');
   }
-  if (!fs.statSync(resolved).isFile()) {
-    throw new Error('Path is not a file');
-  }
+
   return {
     absPath: resolved,
     filename: path.basename(resolved),
