@@ -91,13 +91,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// app.get('/favicon.ico', (req, res) => {
-//   res.status(204).end();
-// });
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
 
-// app.get('/sw.js', (req, res) => {
-//   res.type('application/javascript').send(`/* service worker stub */`);
-// });
+app.get('/sw.js', (req, res) => {
+  res.type('application/javascript').send(`/* service worker stub */`);
+});
 
 app.use(fileRoutes);
 app.use(configRoutes.router);
@@ -121,20 +121,20 @@ app.use((req, res) => {
   });
 });
 
-// app.use((err, req, res, next) => {
-//   // eslint-disable-next-line no-console
-//   console.error(err);
-//   if (err instanceof Error && err.message.startsWith('CORS')) {
-//     return res.status(403).json({ ok: false, error: err.message, path: req.originalUrl });
-//   }
+app.use((err, req, res, next) => {
+  // eslint-disable-next-line no-console
+  console.error(err);
+  if (err instanceof Error && err.message.startsWith('CORS')) {
+    return res.status(403).json({ ok: false, error: err.message, path: req.originalUrl });
+  }
 
-//   res.status(500).json({
-//     ok: false,
-//     error: 'Internal server error',
-//     path: req.originalUrl,
-//     message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-//   });
-// });
+  res.status(500).json({
+    ok: false,
+    error: 'Internal server error',
+    path: req.originalUrl,
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
 
 storageService.ensureStorageDir();
 let serverInstance = null;
