@@ -222,7 +222,6 @@ router.post('/file/chunk', (req, res) => {
   if (!filePath) return;
 
   storageService.ensureStorageDir();
-  const tmpPath = storageService.tempFilePath(req.query.name);
   const partIndex = parsePositiveInt(req.query.part);
   const totalParts = parsePositiveInt(req.query.total);
   const overwrite = (req.query.mode || 'overwrite').toString().toLowerCase() !== 'append';
@@ -231,55 +230,51 @@ router.post('/file/chunk', (req, res) => {
     return res.status(400).json({ error: 'Both query params part and total are required for chunked uploads' });
   }
 
-  if (overwrite && partIndex === 1 && fs.existsSync(tmpPath)) {
-    try { fs.unlinkSync(tmpPath); } catch (_) {}
+  if (overwrite && partIndex === 1) {
+    storageService.clearChunkUpload(req.query.name);
   }
 
-  const writeStream = fs.createWriteStream(tmpPath, { flags: 'a' });
+  const chunks = [];
   let received = 0;
   const contentLength = req.headers['content-length'] ? Number(req.headers['content-length']) : null;
 
   req.on('data', (chunk) => {
     received += chunk.length;
     if (contentLength !== null && received > contentLength) {
-      writeStream.destroy();
       return res.status(400).json({ error: 'Too much data sent' });
     }
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   });
 
   req.on('error', () => {
     if (!res.headersSent) {
-      writeStream.destroy();
       return res.status(500).json({ error: 'Chunk upload stream error' });
     }
   });
 
-  writeStream.on('error', () => {
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Chunk write error' });
-    }
-  });
+  req.on('end', () => {
+    if (res.headersSent) return;
 
-  writeStream.on('finish', () => {
-    if (partIndex === totalParts) {
-      try {
-        fs.renameSync(tmpPath, filePath);
-      } catch (err) {
-        return res.status(500).json({ error: 'Failed finalizing chunked upload' });
+    try {
+      const payload = Buffer.concat(chunks);
+      const result = storageService.storeChunkUpload(req.query.name, partIndex, totalParts, payload);
+
+      if (result.ready) {
+        storageService.writeBuffer(req.query.name, result.buffer);
       }
+
+      res.status(200).json({
+        ok: true,
+        filename: req.query.name,
+        part: partIndex,
+        totalParts,
+        bytes: received,
+        ready: Boolean(result.ready),
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Chunk upload failed' });
     }
-
-    res.status(200).json({
-      ok: true,
-      filename: req.query.name,
-      part: partIndex,
-      totalParts,
-      bytes: received,
-      ready: partIndex === totalParts,
-    });
   });
-
-  req.pipe(writeStream);
 });
 
 router.post('/file/bulk', express.json({ limit: '50mb' }), (req, res) => {

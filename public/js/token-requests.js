@@ -10,10 +10,18 @@
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const queryParams = new URLSearchParams(window.location.search);
 
+  function readCookie(name) {
+    return document.cookie.split('; ').reduce((acc, part) => {
+      const [key, ...rest] = part.split('=');
+      if (key === name) acc = decodeURIComponent(rest.join('='));
+      return acc;
+    }, '');
+  }
+
   function getTokenFromPage() {
     const entered = (tokenInput?.value || '').trim();
     if (entered) return entered;
-    return queryParams.get('token') || (pathParts.length >= 3 ? pathParts[1] : null);
+    return queryParams.get('token') || readCookie('auth_token') || (pathParts.length >= 3 ? pathParts[1] : null);
   }
 
   function setStatus(msg, isError = false) {

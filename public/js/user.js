@@ -4,7 +4,16 @@
   const copyButton = document.getElementById('copyTokenButton');
 
   const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
+
+  function readCookie(name) {
+    return document.cookie.split('; ').reduce((acc, part) => {
+      const [key, ...rest] = part.split('=');
+      if (key === name) acc = decodeURIComponent(rest.join('='));
+      return acc;
+    }, '');
+  }
+
+  const token = params.get('token') || readCookie('auth_token') || '';
 
   function addDetail(label, value) {
     const panel = document.createElement('div');
@@ -21,7 +30,8 @@
     }
 
     try {
-      const resp = await fetch(`/api/user-details?token=${encodeURIComponent(token)}`);
+      const apiUrl = token ? `/api/user-details?token=${encodeURIComponent(token)}` : '/api/user-details';
+      const resp = await fetch(apiUrl, { credentials: 'same-origin' });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Unable to load details');
 

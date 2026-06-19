@@ -1,3 +1,18 @@
+
+req.csv
+
+id,busId,slaveId,startAddress,length,requestType,deviceId
+1,2,1,1,120,3,1
+2,2,1,121,120,3,1
+3,1,1,1,120,3,2
+
+
+dev.csv
+
+id,busId,slaveId,active,ip,port,protocol
+1,2,1,1,0.0.0.0,502,1
+2,1,1,1,192.168.0.100,502,1
+
 uuid.csv
 
 {
@@ -656,18 +671,3 @@ uuid.csv
       }
     ]
 }
-
-
-req.csv
-
-id,busId,slaveId,startAddress,length,requestType,deviceId
-1,2,1,1,120,3,1
-2,2,1,121,120,3,1
-3,1,1,1,120,3,2
-
-
-dev.csv
-
-id,busId,slaveId,active,ip,port,protocol
-1,2,1,1,0.0.0.0,502,1
-2,1,1,1,192.168.0.100,502,1

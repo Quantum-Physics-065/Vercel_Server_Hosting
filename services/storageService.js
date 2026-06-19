@@ -9,6 +9,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR
   : FALLBACK_UPLOAD_DIR;
 
 const memoryStore = globalThis.__FILE_SERVER_MEMORY_STORE__ || (globalThis.__FILE_SERVER_MEMORY_STORE__ = new Map());
+const chunkStore = globalThis.__FILE_SERVER_CHUNK_STORE__ || (globalThis.__FILE_SERVER_CHUNK_STORE__ = new Map());
 
 function sanitizeFilename(filename) {
   if (!filename || typeof filename !== 'string') return null;
@@ -132,6 +133,62 @@ function writeBuffer(filename, content) {
   return getFileMeta(filePath, safeName);
 }
 
+function clearChunkUpload(filename) {
+  const safeName = sanitizeFilename(filename);
+  if (!safeName) return;
+
+  for (const key of chunkStore.keys()) {
+    if (key.startsWith(`${safeName}:`)) {
+      chunkStore.delete(key);
+    }
+  }
+}
+
+function storeChunkUpload(filename, partIndex, totalParts, chunk) {
+  const safeName = sanitizeFilename(filename);
+  if (!safeName) {
+    throw new Error('Invalid filename');
+  }
+
+  if (!Number.isInteger(partIndex) || partIndex < 1 || !Number.isInteger(totalParts) || totalParts < 1) {
+    throw new Error('Invalid chunk metadata');
+  }
+
+  const key = `${safeName}:${partIndex}`;
+  const buffer = Buffer.isBuffer(chunk) ? Buffer.from(chunk) : Buffer.from(String(chunk), 'utf8');
+  chunkStore.set(key, {
+    filename: safeName,
+    partIndex,
+    totalParts,
+    buffer,
+    modified: new Date(),
+  });
+
+  const buffers = [];
+  for (let index = 1; index <= totalParts; index += 1) {
+    const entry = chunkStore.get(`${safeName}:${index}`);
+    if (!entry) {
+      return {
+        ready: false,
+        filename: safeName,
+        partIndex,
+        totalParts,
+      };
+    }
+    buffers.push(entry.buffer);
+  }
+
+  const finalBuffer = Buffer.concat(buffers);
+  clearChunkUpload(safeName);
+  return {
+    ready: true,
+    filename: safeName,
+    partIndex,
+    totalParts,
+    buffer: finalBuffer,
+  };
+}
+
 function readBuffer(filename) {
   const safeName = sanitizeFilename(filename);
   if (!safeName) {
@@ -173,4 +230,6 @@ module.exports = {
   getStats,
   writeBuffer,
   readBuffer,
+  clearChunkUpload,
+  storeChunkUpload,
 };

@@ -33,6 +33,9 @@
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Login failed');
 
+      localStorage.setItem('latestGeneratedToken', data.token || '');
+      localStorage.setItem('latestGeneratedUsername', data.username || '');
+
       result.style.display = 'block';
       resultUrl.textContent = data.url;
       resultUrl.href = data.url;
