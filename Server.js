@@ -141,7 +141,17 @@ let serverInstance = null;
 let currentHost = HOST;
 let currentPort = PORT;
 
+function isVercelRuntime() {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
 function createHttpsServer() {
+  if (isVercelRuntime()) {
+    // Serverless runtime should not attempt to read SSL files or create its own HTTPS server.
+    return http.createServer(app);
+  }
+
+
   const config = configService.getConfig();
   const sslKeyPath = config.sslKeyPath;
   const sslCertPath = config.sslCertPath;
