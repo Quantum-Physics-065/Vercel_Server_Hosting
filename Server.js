@@ -19,7 +19,7 @@ const storageService = require('./services/storageService');
 const configService = require('./services/configService');
 
 const app = express();
-const PORT = Number(process.env.PORT || 4000);
+const PORT = Number(process.env.PORT || 6000);
 const HOST = process.env.HOST || '0.0.0.0';
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '*')
   .split(',')
@@ -136,7 +136,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-storageService.ensureStorageDir();
+if (!isVercelRuntime()) {
+  storageService.ensureStorageDir();
+}
+
 let serverInstance = null;
 let currentHost = HOST;
 let currentPort = PORT;
@@ -240,12 +243,15 @@ async function restartServer() {
 
 configRoutes.setRestartHandler(restartServer);
 
-if (require.main === module) {
-  startServer().catch((err) => {
-    // eslint-disable-next-line no-console
-    console.error('Unable to start server:', err);
-    process.exit(1);
-  });
+// if (require.main === module) {
+//   startServer().catch((err) => {
+//     // eslint-disable-next-line no-console
+//     console.error('Unable to start server:', err);
+//     process.exit(1);
+//   });
+// }
+if (!process.env.VERCEL && require.main === module) {
+  startServer();
 }
 
 module.exports = app;

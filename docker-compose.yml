@@ -4,11 +4,11 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "6000:6000"
       - "21:21"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=6000
       - FTP_PORT=21
       - JWT_SECRET=${JWT_SECRET}
       - UPLOAD_DIR=/app/storage

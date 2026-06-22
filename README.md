@@ -46,8 +46,8 @@ npm run start
 ```
 
 Then open:
-- http://localhost:3000/dashboard
-- http://localhost:3000/api/health
+- http://localhost:6000/dashboard
+- http://localhost:6000/api/health
 
 ## 📁 API Snapshot
 

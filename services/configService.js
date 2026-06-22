@@ -5,7 +5,7 @@ const config = {
   useHttps: env.HTTPS === '1' || env.HTTPS === 'true',
   ftpEnabled: env.ENABLE_FTP === '1' || env.ENABLE_FTP === 'true',
   host: env.HOST || '0.0.0.0',
-  port: Number(env.PORT || 3000),
+  port: Number(env.PORT || 6000),
   ftpPort: Number(env.FTP_PORT || 2121),
   sslKeyPath: env.SSL_KEY_PATH || '',
   sslCertPath: env.SSL_CERT_PATH || '',
