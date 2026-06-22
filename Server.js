@@ -153,8 +153,7 @@ function createHttpsServer() {
     // Serverless runtime should not attempt to read SSL files or create its own HTTPS server.
     return http.createServer(app);
   }
-
-
+  
   const config = configService.getConfig();
   const sslKeyPath = config.sslKeyPath;
   const sslCertPath = config.sslCertPath;
